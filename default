@@ -1,0 +1,99 @@
+#
+# trapped-box
+# example NGINX configuration file
+#
+# this should be placed in /etc/nginx/sites-available/default (or whatever name
+# you'd like) with a symlink created in /etc/nginx/sites-enabled/ that points
+# to it.
+#
+# @author     insdavm <github.com/insdavm>
+# @date       2017.03.06
+# @license    MIT
+#
+
+
+#
+# HTTP server on port 80
+#
+server {
+    listen 80;
+    server_name example.com www.example.com;
+    return 301 https://$host$request_uri;           #Redirect all requests to HTTPS
+}
+
+
+#
+# HTTPS server on port 443
+#
+server {
+    listen 443 default_server;
+
+    root /var/www/html/
+    index index.php;
+
+    server_name example.com www.example.com;
+
+    add_header X-Frame-Options DENY;
+    
+    ssl_certificate    /etc/letsencrypt/live/www.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/www.example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.1 TLSv1;
+
+    # Hypertext String Transport Security (HSTS)
+    #
+    # Uncomment this line (and thus enabling HSTS) only after you've made
+    # sure your TLS setup is working properly (i.e., your certificate chain,
+    # cipher suites, etc).
+    
+    #add_header Strict-Transport-Security 'max-age=31536000; includeSubDomains';
+
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers 'kEECDH+ECDSA+AES128 kEECDH+ECDSA+AES256 kEECDH+AES128 kEECDH+AES256 kEDH+AES128 kEDH+AES256 DES-CBC3-SHA +SHA !aNULL !eNULL !LOW !MD5 !EXP !DSS !PSK !SRP !kECD\
+    H !CAMELLIA !RC4 !SEED';
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    keepalive_timeout 70;
+    ssl_dhparam /etc/nginx/ssl/dhparam2048.pem;
+
+    
+    # Close the connection if a client tries to access the site using anything
+    # other than our FQDN.
+    if ($host !~ ^(example.com|www.example.com)$ ) {
+        return 444;
+    }
+
+    # Try to serve each request as a file, then as a directory,
+    # then return a 404 (Not Found)
+    location / {
+	try_files $uri $uri/ =404;
+    }
+    
+    #
+    # Let's set up a location to store our sensitive files
+    #
+    location /protected/ {
+        
+        # Tell NGINX to ignore external requests for this location,
+        # meaning a user can't type in example.com/protected and get
+        # anything from it.  NGINX will only accepts requests for this
+        # location if the request comes from an internal process, like
+        # a PHP program, for example.
+	internal;
+
+        # This can be any absolute path on the system, the idea being
+        # that the path is outside of the web root, and therefore cannot
+        # be served directly by the web server if a client makes a request
+        # for it.
+        #
+        # When our PHP script makes a request for /protected/asset.jpg,
+        # NGINX translates the path to /home/insdavm/protected/asset.jpg
+	alias   /home/insdavm/protected/;
+    }
+
+    # Tell NGINX to pass PHP files to the PHP socket
+    location ~ \.php$ {
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include snippets/fastcgi-php.conf;
+       	fastcgi_pass unix:/run/php/php7.0-fpm.sock;
+    }
+}

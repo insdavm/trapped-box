@@ -1,0 +1,35 @@
+* {box-sizing: border-box;}
+
+body, html {
+    font-family: "Arial";
+    font-size: 16.8px;
+    height: 100%;
+    background-color: #FEFEFE
+    color: #333;
+}
+
+.center {text-align: center;}
+
+.login {
+    margin: auto;
+    padding: 10% 0;
+}
+
+.login-input {
+    border: 1px solid #333;
+    background: transparent;
+    font-size: inherit;
+    font-family: inherit;
+    width: 175px;
+    height: 35px;
+    padding: 4px;
+    border-radius: 5px;
+}
+
+.login-button {
+    margin-top: 10px;
+    background-color: #CCC;
+    font-weight: 700;
+    color: #FEFEFE;
+    cursor: pointer;
+}
